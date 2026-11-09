@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"regexp"
 	"slices"
 	"strings"
@@ -756,10 +757,16 @@ const trayRowMax = 10
 
 // trayIconFile is a card's logo among the page's icons, as its icon() has
 // it: a "-color" one and the PNGs in their own colours, the others a black
-// glyph (a mask there); nil when there is no such file (a picture the user
-// gave their own provider isn't one).
+// glyph (a mask there); a picture the plugin gave, as the page is sent it
+// (a stored "file:…" one, checked, not a path of its own); nil when there
+// is no such file (a picture the user gave their own provider isn't one).
 func trayIconFile(name string) (b []byte, mono bool) {
 	if name == "" || strings.ContainsAny(name, `/\:`) {
+		if f := provider.IconFile(strings.TrimPrefix(name, "file:")); f != "" {
+			if b, err := os.ReadFile(f); err == nil {
+				return b, false
+			}
+		}
 		return nil, false
 	}
 	if b, err := assets.ReadFile("assets/icons/" + name + ".png"); err == nil {
